@@ -18,5 +18,5 @@ if len(argv) == 2:
 
 else:
     db.open('test-db')
-    r = db.find(('station2', 'D'))
+    r = db.find(('station2', 'T'))
     for x in r: print(x)

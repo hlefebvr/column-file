@@ -59,6 +59,19 @@ class FileBase:
         hash_keys, sort_keys = self.get_keys(keys)
         k = len(self.sort_keys) - len(sort_keys)
         path = '%s/%s/data' % (self.dbname, '/'.join(hash_keys))
+        if sort_keys == ():
+            class ValueIterator:
+                def __init__(self, parent):
+                    self.f = open(path, 'r')
+                    self.parent = parent
+                def __iter__(self):
+                    self.f.seek(0)
+                    return self
+                def __next__(self):
+                    row = self.f.readline()[:-1]
+                    if row != '': return hash_keys + self.parent.str_to_tuple(row)
+                    raise StopIteration
+            return ValueIterator(self)
         with open(path, 'r') as f:
             a = 0
             b = sum(len(row) for row in f)
