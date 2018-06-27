@@ -216,7 +216,15 @@ class FileBase:
             os.rename('%s/tmp' % folder, '%s/data' % folder)
             self.log('Change in %s were committed' % folder)
 
-    def delete(self, key): print('delete')
+    def delete(self, key):
+        str_keys = lambda keys : ','.join([str(k) for k in keys])
+        hash_keys, sort_keys = self.get_keys(key)
+        str_sort_keys = str_keys(sort_keys)
+        str_hash_keys = str_keys(hash_keys)
+        path = '%s/%s' % (self.dbname, '/'.join(hash_keys))
+        with open('%s/buffer' % path, 'a+') as f: f.write("%s,_,DELETE\n" % str_sort_keys)
+        self.to_commit.add(path)
+        self.log('DELETE ((%s),%s) was added to buffer, please commit' % (str_hash_keys,str_sort_keys))
 
     def close(self): print('close')
 
