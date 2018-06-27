@@ -37,7 +37,55 @@ class FileBase:
             self.hash_keys = schema['hash']
             self.sort_keys = schema['sort']
     
-    def find(self, keys): print('find')
+    def get_keys(self, row, from_row = False, truncate_sort_key = -1):
+        if type(row) is tuple: row = list(row)
+        if type(row) is str: row = list(row.split(','))
+        if type(row) is list:
+            n_hash = len(self.hash_keys)
+            n_sort = len(self.sort_keys)
+            if not from_row: # we have the whole key
+                hash_keys = row[:n_hash]
+                sort_keys = row[n_hash:n_sort+1]
+            else: # the row only contains the sort key
+                hash_keys = []
+                sort_keys = row[:n_sort]
+            if len(sort_keys) > 1: sort_keys[1] = int(sort_keys[1])
+            if truncate_sort_key > 0: sort_keys = sort_keys[:truncate_sort_key]
+            return tuple(hash_keys), tuple(sort_keys)
+
+    def findOne(self, keys, default = None):
+        hash_keys, sort_keys = self.get_keys(keys)
+        path = '%s/%s/data' % (self.dbname, '/'.join(hash_keys))
+        with open(path, 'r') as f:
+            a = 0
+            b = sum(len(row) for row in f)
+            c, c_old = -1, 0
+
+            while c != c_old:
+                c_old = c
+                # center of interval
+                c = ceil( (a+b) / 2 )
+
+                # Go to the center of the interval
+                # However, we are somewhere on the line
+                # We need to find the begining of the line
+                f.seek(c)
+                char = f.read(1)
+                while char != '\n':
+                    c -= 1
+                    if c <= -1: break
+                    f.seek(c)
+                    char = f.read(1)
+                f.seek(c+1)
+
+                # Let's apply binary search
+                row = f.readline()
+                _, curr_key = self.get_keys(row, from_row = True)
+                if (sort_keys < curr_key): b = c
+                elif (sort_keys > curr_key): a = c
+                else: return row.split(',')[-1]
+                
+        return default
 
     def put(self, key, value):
         str_keys = lambda keys : ','.join([str(k) for k in keys])
@@ -55,12 +103,12 @@ class FileBase:
         self.to_commit.add(path)
         self.log('(((%s),%s),%s) was added to buffer, please commit' % (str_hash_keys,str_sort_keys, str_value))
 
+    def get_key(self, row):
+        keys = row.split(',')[:len(self.sort_keys)]
+        keys[1] = int(keys[1])
+        return tuple(keys)
+
     def commit(self):
-        def get_key(row):
-            keys = row.split(',')[:len(self.sort_keys)]
-            keys[1] = int(keys[1])
-            return tuple(keys)
-        
         def split_operation_row(row):
             row = row.split(',')
             return row.pop(), ','.join(row)
@@ -99,12 +147,12 @@ class FileBase:
                 else:
                     if operation_type == 'PUT\n':
                         
-                        if get_key(row_operations) == get_key(row_data):
+                        if self.get_key(row_operations) == self.get_key(row_data):
                             write(row_operations_data)
                             row_operations = operations.readline()
                             row_data = data.readline()
                         
-                        elif get_key(row_operations) < get_key(row_data):
+                        elif self.get_key(row_operations) < self.get_key(row_data):
                             write(row_operations_data)
                             row_operations = operations.readline()
                         
@@ -114,7 +162,7 @@ class FileBase:
 
                     elif operation_type == 'DELETE\n':
                         
-                        if get_key(row_operations) == get_key(row_data):
+                        if self.get_key(row_operations) == self.get_key(row_data):
                             row_operations = operations.readline()
                             row_data = data.readline()
                         
@@ -132,6 +180,7 @@ class FileBase:
             os.remove('%s/data' % folder)
             os.remove('%s/buffer' % folder)
             os.rename('%s/tmp' % folder, '%s/data' % folder)
+            self.log('Change in %s were committed' % folder)
 
     def delete(self, key): print('delete')
 
@@ -145,6 +194,8 @@ class FileBase:
             return tuple(row)
         
         def tuple_to_row(t): return ','.join(str(x) for x in t)
+
+        get_key = lambda x: self.get_key(tuple_to_row(x))
 
         class MemoryChunk:
             def __init__(self, max_size):
@@ -162,10 +213,10 @@ class FileBase:
                 self.filenames.append(filename)
                 self.size = 0
                 self.in_memory_chunk = []
-                
+             
             def flush(self, end = False):
                 to_write = ""
-                for row in sorted(self.in_memory_chunk):
+                for row in sorted(self.in_memory_chunk, key=get_key):
                     to_write += ','.join(str(x) for x in row)
                 if to_write != '': self.f_chunk.write(to_write)
                 else:
@@ -177,7 +228,7 @@ class FileBase:
             def add(self, row):
                 self.size += len(row)
                 row = row.split(',')
-                row[1] = int(row[1]) # to do manage different schemas
+                row[1] = int(row[1])
                 self.in_memory_chunk.append(row)
                 if self.size >= self.max_size: self.flush()
         
