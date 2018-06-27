@@ -4,6 +4,11 @@ Simple library to manage local file storage within an application based on the c
 
 ## Documentation
 
+## Data organisation
+
+![How data is organized by column-file](src/structure.png)
+
+
 ### Database methods
 
 - ``` create ``` : creates the "databse"

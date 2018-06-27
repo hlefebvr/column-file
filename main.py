@@ -20,4 +20,3 @@ else:
     db.open('test-db')
     r = db.find(('station2', 'D'))
     for x in r: print(x)
-    
