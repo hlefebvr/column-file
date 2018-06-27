@@ -52,9 +52,12 @@ class FileBase:
             if len(sort_keys) > 1: sort_keys[1] = int(sort_keys[1])
             if truncate_sort_key > 0: sort_keys = sort_keys[:truncate_sort_key]
             return tuple(hash_keys), tuple(sort_keys)
+    
+    def str_to_tuple(self, s): return tuple(s.split(','))
 
-    def findOne(self, keys, default = None):
+    def find(self, keys, default = None, quick_one = False):
         hash_keys, sort_keys = self.get_keys(keys)
+        k = len(self.sort_keys) - len(sort_keys)
         path = '%s/%s/data' % (self.dbname, '/'.join(hash_keys))
         with open(path, 'r') as f:
             a = 0
@@ -80,12 +83,30 @@ class FileBase:
 
                 # Let's apply binary search
                 row = f.readline()
-                _, curr_key = self.get_keys(row, from_row = True)
+                _, curr_key = self.get_keys(row, from_row = True, truncate_sort_key=k)
                 if (sort_keys < curr_key): b = c
                 elif (sort_keys > curr_key): a = c
-                else: return row.split(',')[-1]
+                elif not quick_one: b = c
+                else: return hash_keys + self.str_to_tuple(row)
+            c = f.tell()
+        
+        class ValueIterator:
+            def __init__(self, filename, sort_keys, index, k, parent):
+                self.f = open(filename, 'r')
+                self.index = index
+                self.k = k
+                self.parent = parent
+                self.sort_keys = sort_keys
+            def __iter__(self):
+                self.f.seek(self.index)
+                return self
+            def __next__(self):
+                row = self.f.readline()[:-1]
+                _, curr_key = self.parent.get_keys(row, from_row = True, truncate_sort_key=self.k)
+                if curr_key == sort_keys: return hash_keys + self.parent.str_to_tuple(row)
+                raise StopIteration
                 
-        return default
+        return ValueIterator(path, sort_keys, c, k, self)
 
     def put(self, key, value):
         str_keys = lambda keys : ','.join([str(k) for k in keys])
@@ -186,7 +207,6 @@ class FileBase:
 
     def close(self): print('close')
 
-    # external sort
     def sort(self, mainfile):
         def row_to_tuple(row):
             row = row.split(',')

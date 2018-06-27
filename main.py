@@ -18,5 +18,6 @@ if len(argv) == 2:
 
 else:
     db.open('test-db')
-    r = db.findOne(('station2', 'D', 128))
-    print(r)
+    r = db.find(('station2', 'D'))
+    for x in r: print(x)
+    
