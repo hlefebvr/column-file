@@ -62,7 +62,6 @@ class FileBase:
             return tuple(keys)
         
         def split_operation_row(row):
-            row = row[:-1] # remove \n
             row = row.split(',')
             return row.pop(), ','.join(row)
         
@@ -85,35 +84,35 @@ class FileBase:
 
             while not eof_operations or not eof_data:
                 row_data = row_data[:-1]
-                operation_type, row_operations = split_operation_row(row_operations)
+                operation_type, row_operations_data = split_operation_row(row_operations)
                 
                 if eof_operations:
                     write(row_data)
                     row_data = data.readline()
                 
                 elif eof_data:
-                    if operation_type == 'PUT':
-                        write(row_operations)
+                    if operation_type == 'PUT\n':
+                        write(row_operations_data)
                         row_operations = operations.readline()
                     else: raise ValueError('Unexpected operation %s' % operation_type)
                 
                 else:
-                    if operation_type == 'PUT':
+                    if operation_type == 'PUT\n':
                         
                         if get_key(row_operations) == get_key(row_data):
-                            write(row_operations)
+                            write(row_operations_data)
                             row_operations = operations.readline()
                             row_data = data.readline()
                         
-                        elif get_key(row_operations) > get_key(row_data):
-                            write(row_operations)
+                        elif get_key(row_operations) < get_key(row_data):
+                            write(row_operations_data)
                             row_operations = operations.readline()
                         
                         else:
                             write(row_data)
                             row_data = data.readline()
 
-                    elif operation_type == 'DELETE':
+                    elif operation_type == 'DELETE\n':
                         
                         if get_key(row_operations) == get_key(row_data):
                             row_operations = operations.readline()
@@ -123,7 +122,7 @@ class FileBase:
                             write(row_data)
                             row_data = data.readline()
                     
-                    else: raise ValueError("Unknown operation type : %s" % row_operations[-1])
+                    else: raise ValueError("Unknown operation type : %s for %s" % (operation_type, row_operations))
                 
                 eof_data, eof_operations = (row_data == ''), (row_operations == '')
 
@@ -144,7 +143,9 @@ class FileBase:
             row = row.split(',')
             row[1] = int(row[1])
             return tuple(row)
+        
         def tuple_to_row(t): return ','.join(str(x) for x in t)
+
         class MemoryChunk:
             def __init__(self, max_size):
                 self.count, self.size = 0, 0
