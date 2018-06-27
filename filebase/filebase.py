@@ -3,6 +3,7 @@ import os
 from random import randrange
 from queue import Queue, PriorityQueue, LifoQueue
 from math import ceil
+import shutil
 
 class FileBase:
     # chunk_size in Mb
@@ -56,28 +57,28 @@ class FileBase:
 
     def commit(self):
         def get_key(row):
-            print('[', row, ']')
             keys = row.split(',')[:len(self.sort_keys)]
             keys[1] = int(keys[1])
             return tuple(keys)
         
         def split_operation_row(row):
-            row = row[:-1] # remove \
+            row = row[:-1] # remove \n
             row = row.split(',')
             return row.pop(), ','.join(row)
         
         for folder in self.to_commit:
-            if not os.path.exists('%s/buffer' % folder): return self.log("Nothing to commit")
+            if not os.path.exists('%s/buffer' % folder):
+                return self.log("Nothing to commit")
             
             # sort file of coming operations
             self.sort('%s/buffer' % folder)
-            
-            # "merge" operations
-            f = open('%s/tmp' % folder, 'w+')
-            data = open('%s/data' % folder, 'a+')
-            operations = open('%s/buffer' % folder, 'r')
 
-            write = lambda txt: f.write('%s\n' % txt)
+            if not os.path.exists('%s/data' % folder): open('%s/data' % folder, 'w+').close()
+            data = open('%s/data' % folder, 'r')
+            operations = open('%s/buffer' % folder)
+            f = open('%s/tmp' % folder, 'w+')
+
+            def write(txt): f.write('%s\n' % txt)
 
             row_data, row_operations = data.readline(), operations.readline()
             eof_data, eof_operations = (row_data == ''), (row_operations == '')
@@ -125,15 +126,13 @@ class FileBase:
                     else: raise ValueError("Unknown operation type : %s" % row_operations[-1])
                 
                 eof_data, eof_operations = (row_data == ''), (row_operations == '')
+
             f.close()
             data.close()
             operations.close()
-
             os.remove('%s/data' % folder)
             os.remove('%s/buffer' % folder)
             os.rename('%s/tmp' % folder, '%s/data' % folder)
-
-            self.log('Changes to %s were comitted' % folder)
 
     def delete(self, key): print('delete')
 

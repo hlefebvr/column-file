@@ -1,10 +1,10 @@
 from filebase import FileBase
-
 from random import randint
+from sys import argv
 
 db = FileBase(verbose = True)
 
-if True:
+if len(argv) == 2:
     db.create('test-db', ['stop_id'], ['type', 'timestamp'])
 
     types = ['A', 'D', 'T']
@@ -18,5 +18,5 @@ if True:
 
 else:
     db.open('test-db')
-    db.put(('station0', 'A', 585), -1)
+    db.put(('station2', 'T', 2), -1)
     db.commit()
