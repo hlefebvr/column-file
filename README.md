@@ -29,7 +29,6 @@ Simple library to manage local file storage within an application based on the c
 
 ## TODO : 
 - allow partition functions other than identity (for the moment : partition key = folder/subfolder)
-- implement delete operations
 - fix problem with multiple put within the same commit
 - implement schema (for now is ((string), string, int) to test but I should implement real schema options)
 - close read mode file descriptors when committing
