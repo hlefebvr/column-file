@@ -31,7 +31,35 @@ class LocalColumnFile:
                 self.schema = json.loads(f.read())
         self.log("[OK] %s db opened" % dbname)
     
-    def find(self, hash_keys, sort_keys): return;
+    def find(self, hash_keys, sort_keys, report_error):
+        def fail():
+            error_msg = "find operation did not match %s" % str(hash_keys + sort_keys)
+            self.logger.log("[WARN] %s" % error_msg)
+            if not report_error: return hash_keys + sort_keys + ({},)
+            else: raise ValueError(error_msg)
+        
+        get_key = self._get_function_get_key()
+        path = self.dbname
+        for folder in hash_keys:
+            path += "/%s" % folder
+            if not os.path.exists(path): return fail()
+        data_file = "%s/data.csv" % path
+        if not os.path.exists(data_file): return fail()
+        index = self.algos.binary_search(data_file, sort_keys, get_key)
+        with open(data_file, 'r') as f:
+            f.seek(index)
+            csv_reader = csv.reader(f)
+            try: row = next(csv_reader)
+            except: return fail()
+        row = self._parse_row(row)
+        if get_key(row) == sort_keys: return hash_keys + row
+        return fail()
+    
+    def _parse_row(self, row):
+        get_key = self._get_function_get_key()
+        sort_keys = get_key(row)
+        value = json.loads(row[len(sort_keys)])
+        return sort_keys + (value,)
     
     def scan(self, sub_hash_keys, sub_sort_keys, filter): return;
     

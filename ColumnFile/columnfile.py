@@ -56,13 +56,13 @@ class ColumnFile:
     
     # Returns columns associated to the key or None if key does not exists
     # key : hash + sort key
-    def find(self, key):
-        try: hash_keys, sort_keys = self._split_key()
+    def find(self, key, report_error = False):
+        try: hash_keys, sort_keys = self._split_key(key)
         except:
             self.manager.log("[ERROR] provided key does not match schema.\n\
             find operation requires a complete key (hash + sort) matching db schema")
             return;
-        return self.manager.find(hash_keys, sort_keys)
+        return self.manager.find(hash_keys, sort_keys, report_error)
 
     # Returns an iterator of data associated to the sub key or None if nothing is found
     # sub_key : hash + sub_sort_key or sub_hash
@@ -70,7 +70,7 @@ class ColumnFile:
     # (note that the function will still enumerate data 
     # but will return only those matching the filter criteria)
     def scan(self, sub_key = None, filter = lambda _: True):
-        try: hash_keys, sort_keys = self._split_key(complete=False)
+        try: hash_keys, sort_keys = self._split_key(sub_key, complete=False)
         except:
             self.manager.log("[ERROR] provided key does not match schema\n\
             scan operation requires sub key (hash + sort) match key order")

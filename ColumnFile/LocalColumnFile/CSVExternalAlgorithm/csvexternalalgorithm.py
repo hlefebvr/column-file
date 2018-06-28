@@ -1,3 +1,4 @@
+from math import ceil
 import os, csv
 
 default_get_key = lambda row : row[0]
@@ -45,8 +46,9 @@ class CSVLocalAlgorithm:
         # k-way merge
         self.k_way_merge(chunk_sorter.get_filenames(), output_filename, get_key)
     
-    def binary_search(self, filename, get_key = default_get_key):
-        return;
+    def binary_search(self, filename, sort_keys, get_key = default_get_key):
+        print('TODO')
+        return 0
     
     def k_way_merge(self, filenames, output_filename, get_key = default_get_key):
         way = list()
