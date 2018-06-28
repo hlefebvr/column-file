@@ -33,7 +33,7 @@ class ColumnFile:
             if type(definition) is not list: return False
             for key_specification in definition:
                 if len(key_specification) != 2: return False
-                if key_specification[1] not in ['number', 'string']: return False;
+                if key_specification[1] not in ['integer', 'float', 'string']: return False;
             return True
         for key_type in ['hash', 'sort']:
             if not is_valid_key_definition(schema[key_type]):

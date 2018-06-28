@@ -18,5 +18,6 @@ class Logger:
         print('(column-file)> ', end = '')
         if msg.startswith('[ERROR]', 0, 7): color = bcolors.FAIL
         elif msg.startswith('[OK]', 0, 4): color = bcolors.OKGREEN
+        elif msg.startswith('[WARN]', 0, 6): color = bcolors.WARNING
         else: color = ''
         print(color + msg + bcolors.ENDC)
