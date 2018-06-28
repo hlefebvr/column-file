@@ -1,22 +1,14 @@
-from filebase import FileBase
-from random import randint
-from sys import argv
+from ColumnFile import ColumnFile
 
-db = FileBase(verbose = False)
+db = ColumnFile(verbose = True)
 
-if len(argv) == 2:
-    db.create('test-db', ['stop_id'], ['type', 'timestamp'])
+db.create("test-db", {
+    "hash": [ ("station", "string") ],
+    "sort": [ ("type", "string"), ("timestamp", "number") ]
+})
 
-    types = ['A', 'D', 'T']
-    for i in range(100):
-        for n in range(10):
-            db.put(('station%s' % n, types[randint(0, len(types)-1)], randint(0, 100000)), randint(0, 50))
+db.put(("station1", "A", 3), { "key": "value" })
+db.merge(("station1", "A", 3), { "key": "value" })
+db.delete(("station1", "A", 3))
 
-    db.put(('station2', 'D', 128), 23456)
-
-    db.commit()
-
-else:
-    db.open('test-db')
-    r = db.find(('station2', 'T'))
-    for x in r: print(x)
+db.commit()
