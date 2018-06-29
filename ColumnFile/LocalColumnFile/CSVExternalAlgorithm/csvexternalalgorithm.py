@@ -47,7 +47,7 @@ class CSVLocalAlgorithm:
         # k-way merge
         self.k_way_merge(chunk_sorter.get_filenames(), output_filename, get_key)
     
-    def binary_search(self, filename, sort_keys, get_key = default_get_key):
+    def binary_search(self, filename, sort_keys, get_key = default_get_key, first_occurence = False):
         with open(filename, 'r') as f:
             a = a_end = 0
             f.seek(0,2) # got to end of file
@@ -79,7 +79,8 @@ class CSVLocalAlgorithm:
                 print(row)
                 if sort_keys < key: b = c
                 elif sort_keys > key: a = c_end
-                else: return c
+                elif not first_occurence: return c
+                else: return c # go find first occurence
 
         return 0
     
