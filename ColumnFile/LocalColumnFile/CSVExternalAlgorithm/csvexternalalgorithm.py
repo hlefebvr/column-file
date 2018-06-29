@@ -1,4 +1,5 @@
 from math import ceil
+from io import StringIO
 import os, csv
 
 default_get_key = lambda row : row[0]
@@ -47,7 +48,39 @@ class CSVLocalAlgorithm:
         self.k_way_merge(chunk_sorter.get_filenames(), output_filename, get_key)
     
     def binary_search(self, filename, sort_keys, get_key = default_get_key):
-        print('TODO')
+        with open(filename, 'r') as f:
+            a = a_end = 0
+            f.seek(0,2) # got to end of file
+            b = b_end = f.tell()
+            c_max = b
+
+            i = 0
+            # while i <= 50:
+            while a < b:
+                i += 1
+                c = round( (a+b)/2 )
+                f.seek(c)
+
+                # got to begining of line
+                while f.read(1) != '\n':
+                    c -= 1
+                    if c > 0: f.seek(c)
+                    else:
+                        f.seek(0)
+                        break
+                
+                c = f.tell()
+                csv_row = StringIO(f.readline())
+                c_end = f.tell()
+                csv_reader = csv.reader(csv_row)
+                row = next(csv_reader)
+
+                key = get_key(row)
+                print(row)
+                if sort_keys < key: b = c
+                elif sort_keys > key: a = c_end
+                else: return c
+
         return 0
     
     def k_way_merge(self, filenames, output_filename, get_key = default_get_key):

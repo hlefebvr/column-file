@@ -83,7 +83,6 @@ class FileBase:
                 c = ceil( (a+b) / 2 )
 
                 # Go to the center of the interval
-                # However, we are somewhere on the line
                 # We need to find the begining of the line
                 f.seek(c)
                 char = f.read(1)

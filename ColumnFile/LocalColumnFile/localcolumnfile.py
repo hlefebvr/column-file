@@ -39,18 +39,29 @@ class LocalColumnFile:
             else: raise ValueError(error_msg)
         
         get_key = self._get_function_get_key()
+
+        # check hash key exists
         path = self.dbname
         for folder in hash_keys:
             path += "/%s" % folder
             if not os.path.exists(path): return fail()
+        
+        # check partition has data to be looked for
         data_file = "%s/data.csv" % path
         if not os.path.exists(data_file): return fail()
+
+        # binary search
         index = self.algos.binary_search(data_file, sort_keys, get_key)
+
+        # move to line where the data SHOULD be if it were present
+        # and read result
         with open(data_file, 'r') as f:
             f.seek(index)
             csv_reader = csv.reader(f)
             try: row = next(csv_reader)
             except: return fail()
+        
+        # check result is what we expected
         row = self._parse_row(row)
         if get_key(row) == sort_keys: return hash_keys + row
         return fail()
@@ -181,6 +192,7 @@ class LocalColumnFile:
                     except StopIteration: eof_operation = True
                     try: data_row = next(data)
                     except StopIteration: eof_data = True
+            curr_row.commit()
 
             ## close files
             for f in opened_files: f.close()

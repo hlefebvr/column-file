@@ -14,9 +14,9 @@ for i in range(10):
     for n in range(1000):
         key = ("station%s" % str(i), types[randint(0,2)], randint(0, 10000))
         db.merge(key, { "number": n })
-db.put(('station0', 'A', 1900), { "value": True })
+db.put(('station0', 'A', 0), { "value": True })
 db.commit()
 
-r = db.find(('station0', 'T', 34))
+r = db.find(('station0', 'A', 0))
 
 print(r)
