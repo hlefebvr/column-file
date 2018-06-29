@@ -3,6 +3,7 @@ import os, csv, json
 
 from .CSVExternalAlgorithm import CSVLocalAlgorithm
 from .logger import Logger
+from queue import Queue
 
 class LocalColumnFile:
 
@@ -72,7 +73,58 @@ class LocalColumnFile:
         value = json.loads(row[len(sort_keys)])
         return sort_keys + (value,)
     
-    def scan(self, sub_hash_keys, sub_sort_keys, filter): return;
+    def scan(self, sub_hash_keys, sub_sort_keys, row_filter):
+        class RowIterator:
+            def __init__(self, root, binary_search, split_key, get_key):
+                self.root = root
+                self.hash_keys = Queue()
+                self.hash_keys.put(sub_hash_keys)
+                self.sub_sort_keys = sub_sort_keys
+                self.filter = row_filter
+                self.f = None
+                self.csv_reader = None
+                self.current_sub_hash_key = None
+                self.split_key = split_key
+                self.get_key = get_key
+                self.binary_search = binary_search
+            def next_hash(self):
+                if self.hash_keys.empty(): raise StopIteration
+                next_sub_hash_key = self.hash_keys.get()
+                next_folder = "%s/%s" % (self.root, '/'.join(next_sub_hash_key))
+                data_path = "%s/data.csv" % next_folder
+                if os.path.exists(data_path):
+                    if self.f is not None: self.f.close()
+                    index = self.binary_search(data_path, self.sub_sort_keys, self.get_key)
+                    self.f = open(data_path, 'r')
+                    self.csv_reader = csv.reader(self.f)
+                    self.current_sub_hash_key = next_sub_hash_key
+                    self.f.seek(index)
+                    return;
+                sub_folders = os.listdir(next_folder)
+                if len(sub_folders) > 0:
+                    for sub_folder in sub_folders:
+                        if not os.path.isdir("%s/%s" % (next_folder, sub_folder)): continue
+                        h, s = self.split_key( next_sub_hash_key + (sub_folder,) )
+                        self.hash_keys.put(h)
+                return self.next_hash()
+            def __iter__(self):
+                self.next_hash()
+                return self;
+            def __next__(self):
+                try: value = next(self.csv_reader)
+                except StopIteration:
+                    self.next_hash()
+                    return self.__next__()
+                complete_row = tuple(self.current_sub_hash_key) + tuple(value)
+                value = json.loads(complete_row[-1])
+                complete_key = complete_row[:-1]
+                hash_key, sort_key = self.split_key(complete_key)
+                if sort_key[:len(self.sub_sort_keys)] != self.sub_sort_keys:
+                    raise StopIteration
+                obj_to_return = hash_key + sort_key + (value,)
+                if self.filter(obj_to_return): return obj_to_return
+                else: return self.__next__()
+        return RowIterator(self.dbname, self.algos.binary_search, self._split_key, self._get_function_get_key())
     
     def merge(self, hash_keys, sort_keys, column_values):
         row = (time(), 'MERGE') + sort_keys + (json.dumps(column_values),)
@@ -232,3 +284,25 @@ class LocalColumnFile:
             csv_writer.writerow(row)
         self.to_commit.add(hash_keys)
         f.close()
+
+    def _split_key(self, keys, complete = True):
+        schema = self.get_schema()
+        n_hash, n_sort, n_key = len(schema['hash']), len(schema['sort']), len(keys)
+        if n_key == 0: return tuple(), tuple()
+        if n_key > n_hash + n_sort:
+            self.log("[ERROR] provided key is too big")
+            return;
+        schema = (schema['hash'] + schema['sort'])[:n_key]
+        error = False
+        for value, specification in zip(keys, schema):
+            _, expected_type = specification
+            actual_type = type(value)
+            if expected_type == 'number' and actual_type not in [int, float]: error = True
+            if expected_type == 'string' and actual_type != str: error = True
+            if error:
+                msg = "[ERROR] provided key does not match schema\n\
+                    %s expected to be %s" % (str(keys), actual_type)
+                self.log(msg)
+                raise ValueError(msg)
+        if n_hash < n_key: return tuple(keys[:n_hash]), tuple(keys[n_hash:])
+        return tuple(keys[:n_hash]), tuple()

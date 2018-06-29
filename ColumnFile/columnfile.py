@@ -69,13 +69,16 @@ class ColumnFile:
     # fileter : lambda function to filter the results
     # (note that the function will still enumerate data 
     # but will return only those matching the filter criteria)
-    def scan(self, sub_key = None, filter = lambda _: True):
+    def scan(self, sub_key = None, row_filter = lambda _: True):
+        if type(sub_key) == str: sub_key = (sub_key,)
         try: hash_keys, sort_keys = self._split_key(sub_key, complete=False)
-        except:
+        except ValueError as e:
+            print(e)
             self.manager.log("[ERROR] provided key does not match schema\n\
             scan operation requires sub key (hash + sort) match key order")
+            self.manager.log("[ERROR] %s" % e)
             return;
-        return self.manager.scan(hash_keys, sort_keys)
+        return self.manager.scan(hash_keys, sort_keys, row_filter)
     
     # Updates data associated to key,
     # if data exists, columns are merged with existing ones
@@ -84,7 +87,7 @@ class ColumnFile:
     # column_values : dict with column names: values
     def merge(self, key, column_values):
         try: hash_keys, sort_keys = self._split_key(key)
-        except:
+        except ValueError as e:
             self.manager.log("[ERROR] provided key does not match schema\n\
             merge operation requires a complete key (hash + sort) matching db schema")
             self.manager.log("[ERROR] %s" % e)
@@ -147,4 +150,4 @@ class ColumnFile:
                 self.manager.log(msg)
                 raise ValueError(msg)
         if n_hash < n_key: return tuple(keys[:n_hash]), tuple(keys[n_hash:])
-        return tuple(key[:n_hash]), tuple()
+        return tuple(keys[:n_hash]), tuple()

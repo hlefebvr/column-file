@@ -52,12 +52,11 @@ class CSVLocalAlgorithm:
             a = a_end = 0
             f.seek(0,2) # got to end of file
             b = b_end = f.tell()
-            c_max = b
+            c, c_old = 0, -1
 
-            i = 0
-            # while i <= 50:
-            while a < b:
-                i += 1
+            # while a < b:
+            while c != c_old:
+                c_old = c
                 c = round( (a+b)/2 )
                 f.seek(c)
 
@@ -76,13 +75,12 @@ class CSVLocalAlgorithm:
                 row = next(csv_reader)
 
                 key = get_key(row)
-                print(row)
                 if sort_keys < key: b = c
                 elif sort_keys > key: a = c_end
                 elif not first_occurence: return c
-                else: return c # go find first occurence
+                else: b = c_end # go find first occurence
 
-        return 0
+        return c
     
     def k_way_merge(self, filenames, output_filename, get_key = default_get_key):
         way = list()
