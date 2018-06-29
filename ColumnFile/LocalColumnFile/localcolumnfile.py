@@ -119,6 +119,7 @@ class LocalColumnFile:
                 value = json.loads(complete_row[-1])
                 complete_key = complete_row[:-1]
                 hash_key, sort_key = self.split_key(complete_key)
+                sort_key = self.get_key(sort_key)
                 if sort_key[:len(self.sub_sort_keys)] != self.sub_sort_keys:
                     raise StopIteration
                 obj_to_return = hash_key + sort_key + (value,)
@@ -287,8 +288,8 @@ class LocalColumnFile:
 
     def _split_key(self, keys, complete = True):
         schema = self.get_schema()
+        if keys == None or len(keys) == 0: return tuple(), tuple()
         n_hash, n_sort, n_key = len(schema['hash']), len(schema['sort']), len(keys)
-        if n_key == 0: return tuple(), tuple()
         if n_key > n_hash + n_sort:
             self.log("[ERROR] provided key is too big")
             return;

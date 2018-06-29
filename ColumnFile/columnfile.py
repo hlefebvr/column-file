@@ -132,8 +132,8 @@ class ColumnFile:
     # complete : if true, key is expected to be complete
     def _split_key(self, keys, complete = True):
         schema = self.get_schema()
+        if keys == None or len(keys) == 0: return tuple(), tuple()
         n_hash, n_sort, n_key = len(schema['hash']), len(schema['sort']), len(keys)
-        if n_key == 0: return tuple(), tuple()
         if n_key > n_hash + n_sort:
             self.manager.log("[ERROR] provided key is too big")
             return;

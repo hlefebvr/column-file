@@ -72,7 +72,8 @@ class CSVLocalAlgorithm:
                 csv_row = StringIO(f.readline())
                 c_end = f.tell()
                 csv_reader = csv.reader(csv_row)
-                row = next(csv_reader)
+                try: row = next(csv_reader)
+                except: return c_end
 
                 key = get_key(row)
                 if sort_keys < key: b = c
