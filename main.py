@@ -1,23 +1,16 @@
 from ColumnFile import ColumnFile
 from random import randint
 
-db = ColumnFile()
+db = ColumnFile(verbose = True)
 
-db.create("test-db", {
-    "hash": [ ("station", "string") ],
-    "sort": [ ("type", "string"), ("timestamp", "integer") ]
+# create the database
+db.create("demo-db", {
+    "hash": [ ("year", "integer"), ("month", "integer") ],
+    "sort": [ ("day", "integer"), ("timestamp", "float") ]
 })
 
-types = ['A', 'D', 'T']
+# open the existing database
+db.open("demo-db")
 
-for i in range(10):
-    for n in range(10):
-        key = ("station%s" % str(i), types[randint(0,2)], randint(0, 10000))
-        db.merge(key, { "number": n })
-        db.merge(key, { "number2": n+1 })
-db.put(('station0', 'A', 0), { "value": True })
-db.commit()
-
-r = db.scan()
-
-for x in r: print(x)
+# let's add some data
+# for year in range(2012, 2018)
