@@ -15,7 +15,7 @@ class LocalColumnFile:
         self.logger = Logger(verbose)
         self.algos = CSVLocalAlgorithm()
     
-    def log(self, msg): self.logger.log(msg)
+    def log(self, msg): return self.logger.log(msg)
 
     def create(self, dbname, schema):
         os.mkdir(dbname)
@@ -32,9 +32,9 @@ class LocalColumnFile:
                 self.schema = json.loads(f.read())
         self.log("[OK] %s db opened" % dbname)
     
-    def find(self, hash_keys, sort_keys, report_error):
+    def get(self, hash_keys, sort_keys, report_error):
         def fail():
-            error_msg = "find operation did not match %s" % str(hash_keys + sort_keys)
+            error_msg = "get operation did not match %s" % str(hash_keys + sort_keys)
             self.logger.log("[WARN] %s" % error_msg)
             if not report_error: return hash_keys + sort_keys + ({},)
             else: raise ValueError(error_msg)
@@ -64,7 +64,7 @@ class LocalColumnFile:
         
         # check result is what we expected
         row = self._parse_row(row)
-        if get_key(row) == sort_keys: return hash_keys + row
+        if get_key(row) == sort_keys: return (hash_keys + sort_keys,) + (row[-1],)
         return fail()
     
     def _parse_row(self, row):
@@ -87,44 +87,74 @@ class LocalColumnFile:
                 self.split_key = split_key
                 self.get_key = get_key
                 self.binary_search = binary_search
+            
             def next_hash(self):
+                # if there are no more hash keys to be explored, end of iterator
                 if self.hash_keys.empty(): raise StopIteration
+                
+                # let's take the next hash key
                 next_sub_hash_key = self.hash_keys.get()
                 next_folder = "%s/%s" % (self.root, '/'.join(next_sub_hash_key))
                 data_path = "%s/data.csv" % next_folder
+
+                # if the folder contains a data.csv file
+                # we need to enumerate its rows (with respect to the sort keys) 
                 if os.path.exists(data_path):
                     if self.f is not None: self.f.close()
+                    
+                    # binary search to the sort key
                     index = self.binary_search(data_path, self.sub_sort_keys, self.get_key)
+                    
+                    # let's open the file at the right position
                     self.f = open(data_path, 'r')
                     self.csv_reader = csv.reader(self.f)
-                    self.current_sub_hash_key = next_sub_hash_key
                     self.f.seek(index)
+                    self.current_sub_hash_key = next_sub_hash_key
+
                     return;
+                
+                # otherwise, list subfolders
                 sub_folders = os.listdir(next_folder)
+
+                # if there are any subfolders, we need to explore them
                 if len(sub_folders) > 0:
+                    # add every subfolder to exploration queue
                     for sub_folder in sub_folders:
                         if not os.path.isdir("%s/%s" % (next_folder, sub_folder)): continue
                         h, s = self.split_key( next_sub_hash_key + (sub_folder,) )
                         self.hash_keys.put(h)
+                
                 return self.next_hash()
+            
             def __iter__(self):
-                self.next_hash()
+                self.next_hash() # loads first partition
                 return self;
+            
             def __next__(self):
+                # read the next line
                 try: value = next(self.csv_reader)
+                # if it fails, load next partition
                 except StopIteration:
                     self.next_hash()
                     return self.__next__()
+                
+                # let's build the resulting current row
                 complete_row = tuple(self.current_sub_hash_key) + tuple(value)
                 value = json.loads(complete_row[-1])
                 complete_key = complete_row[:-1]
                 hash_key, sort_key = self.split_key(complete_key)
-                sort_key = self.get_key(sort_key)
-                if sort_key[:len(self.sub_sort_keys)] != self.sub_sort_keys:
-                    raise StopIteration
-                obj_to_return = hash_key + sort_key + (value,)
+                sort_key = self.get_key(sort_key) # get_key does cast key columns
+                obj_to_return = (hash_key + sort_key,) + (value,)
+
+                # if we stop being accurate with respect with sort key
+                # it means that we are done with this partition
+                if sort_key[:len(self.sub_sort_keys)] != self.sub_sort_keys: raise self.next_hash()
+                
+                # if the current row passes filter, return it
+                # otherwise skip to next row
                 if self.filter(obj_to_return): return obj_to_return
                 else: return self.__next__()
+        
         return RowIterator(self.dbname, self.algos.binary_search, self._split_key, self._get_function_get_key())
     
     def merge(self, hash_keys, sort_keys, column_values):

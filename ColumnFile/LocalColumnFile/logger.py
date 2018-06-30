@@ -15,6 +15,7 @@ class Logger:
         self.active = active
     
     def log(self, msg):
+        if not self.active: return;
         print('(column-file)> ', end = '')
         if msg.startswith('[ERROR]', 0, 7): color = bcolors.FAIL
         elif msg.startswith('[OK]', 0, 4): color = bcolors.OKGREEN

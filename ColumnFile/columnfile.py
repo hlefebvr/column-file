@@ -56,13 +56,13 @@ class ColumnFile:
     
     # Returns columns associated to the key or None if key does not exists
     # key : hash + sort key
-    def find(self, key, report_error = False):
-        try: hash_keys, sort_keys = self._split_key(key)
+    def get(self, key, report_error = False):
+        try: hash_keys, sort_keys = self.manager._split_key(key)
         except:
             self.manager.log("[ERROR] provided key does not match schema.\n\
-            find operation requires a complete key (hash + sort) matching db schema")
+            get operation requires a complete key (hash + sort) matching db schema")
             return;
-        return self.manager.find(hash_keys, sort_keys, report_error)
+        return self.manager.get(hash_keys, sort_keys, report_error)
 
     # Returns an iterator of data associated to the sub key or None if nothing is found
     # sub_key : hash + sub_sort_key or sub_hash
@@ -71,7 +71,7 @@ class ColumnFile:
     # but will return only those matching the filter criteria)
     def scan(self, sub_key = None, row_filter = lambda _: True):
         if type(sub_key) == str: sub_key = (sub_key,)
-        try: hash_keys, sort_keys = self._split_key(sub_key, complete=False)
+        try: hash_keys, sort_keys = self.manager._split_key(sub_key, complete=False)
         except ValueError as e:
             print(e)
             self.manager.log("[ERROR] provided key does not match schema\n\
@@ -86,7 +86,7 @@ class ColumnFile:
     # key : hash + sort key
     # column_values : dict with column names: values
     def merge(self, key, column_values):
-        try: hash_keys, sort_keys = self._split_key(key)
+        try: hash_keys, sort_keys = self.manager._split_key(key)
         except ValueError as e:
             self.manager.log("[ERROR] provided key does not match schema\n\
             merge operation requires a complete key (hash + sort) matching db schema")
@@ -100,7 +100,7 @@ class ColumnFile:
     # key : hash + sort key
     # column_values : dict with column names: values
     def put(self, key, column_values):
-        try: hash_keys, sort_keys = self._split_key(key)
+        try: hash_keys, sort_keys = self.manager._split_key(key)
         except ValueError as e:
             self.manager.log("[ERROR] provided key does not match schema\n\
             put operation requires a complete key (hash + sort) matching db schema")
@@ -111,7 +111,7 @@ class ColumnFile:
     # Deletes data
     # key : hash + sort key
     def delete(self, key):
-        try: hash_keys, sort_keys = self._split_key(key)
+        try: hash_keys, sort_keys = self.manager._split_key(key)
         except:
             self.manager.log("[ERROR] provided key does not match schema\n\
             delete operation requires a complete key (hash + sort) matching db schema")
@@ -130,24 +130,24 @@ class ColumnFile:
     # Throws exception if key does not match schema
     # keys : complete key tuple
     # complete : if true, key is expected to be complete
-    def _split_key(self, keys, complete = True):
-        schema = self.get_schema()
-        if keys == None or len(keys) == 0: return tuple(), tuple()
-        n_hash, n_sort, n_key = len(schema['hash']), len(schema['sort']), len(keys)
-        if n_key > n_hash + n_sort:
-            self.manager.log("[ERROR] provided key is too big")
-            return;
-        schema = (schema['hash'] + schema['sort'])[:n_key]
-        error = False
-        for value, specification in zip(keys, schema):
-            _, expected_type = specification
-            actual_type = type(value)
-            if expected_type == 'number' and actual_type not in [int, float]: error = True
-            if expected_type == 'string' and actual_type != str: error = True
-            if error:
-                msg = "[ERROR] provided key does not match schema\n\
-                    %s expected to be %s" % (str(keys), actual_type)
-                self.manager.log(msg)
-                raise ValueError(msg)
-        if n_hash < n_key: return tuple(keys[:n_hash]), tuple(keys[n_hash:])
-        return tuple(keys[:n_hash]), tuple()
+    # def manager._split_key(self, keys, complete = True):
+    #     schema = self.get_schema()
+    #     if keys == None or len(keys) == 0: return tuple(), tuple()
+    #     n_hash, n_sort, n_key = len(schema['hash']), len(schema['sort']), len(keys)
+    #     if n_key > n_hash + n_sort:
+    #         self.manager.log("[ERROR] provided key is too big")
+    #         return;
+    #     schema = (schema['hash'] + schema['sort'])[:n_key]
+    #     error = False
+    #     for value, specification in zip(keys, schema):
+    #         _, expected_type = specification
+    #         actual_type = type(value)
+    #         if expected_type == 'number' and actual_type not in [int, float]: error = True
+    #         if expected_type == 'string' and actual_type != str: error = True
+    #         if error:
+    #             msg = "[ERROR] provided key does not match schema\n\
+    #                 %s expected to be %s" % (str(keys), actual_type)
+    #             self.manager.log(msg)
+    #             raise ValueError(msg)
+    #     if n_hash < n_key: return tuple(keys[:n_hash]), tuple(keys[n_hash:])
+    #     return tuple(keys[:n_hash]), tuple()
