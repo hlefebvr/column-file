@@ -70,7 +70,7 @@ class ColumnFile:
     # (note that the function will still enumerate data 
     # but will return only those matching the filter criteria)
     def scan(self, sub_key = None, row_filter = lambda _: True):
-        if type(sub_key) == str: sub_key = (sub_key,)
+        if type(sub_key) != tuple: sub_key = (sub_key,)
         try: hash_keys, sort_keys = self.manager._split_key(sub_key, complete=False)
         except ValueError as e:
             print(e)

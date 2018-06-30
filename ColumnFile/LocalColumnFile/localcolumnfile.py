@@ -94,7 +94,8 @@ class LocalColumnFile:
                 
                 # let's take the next hash key
                 next_sub_hash_key = self.hash_keys.get()
-                next_folder = "%s/%s" % (self.root, '/'.join(next_sub_hash_key))
+                next_folder = self.root
+                for key in next_sub_hash_key: next_folder += "/%s" % str(key)
                 data_path = "%s/data.csv" % next_folder
 
                 # if the folder contains a data.csv file
@@ -171,7 +172,8 @@ class LocalColumnFile:
     
     def commit(self):
         for hash_key in self.to_commit:
-            folder_path = "%s/%s" % (self.dbname, '/'.join(hash_key))
+            folder_path = self.dbname
+            for key in hash_key: folder_path += '/%s' % str(key)
             buffer_path = "%s/buffer.csv" % folder_path
             data_path   = "%s/data.csv" % folder_path
             sorted_path = "%s/sorted.csv" % folder_path
