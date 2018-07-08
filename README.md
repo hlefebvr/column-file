@@ -2,7 +2,7 @@
 
 ColumnFile is a simple column oriented file storage solution for analyzing all kinds of data (csv, json, ...) using local files.
 
-This solution allows efficient CRUD operations by key. Details concerning the implementation are available here : [see implementation details](http://operations-research.blog). It produces a file organization allowing fast access to data as follow : 
+This solution allows efficient CRUD operations by key. Details concerning the implementation are available here : [see implementation details](https://operations-research.blog/2018/07/08/building-a-local-column-oriented-database-in-python/). It produces a file organization allowing fast access to data as follow : 
 
 ![How data is organized by column-file](src/structure.png)
 
