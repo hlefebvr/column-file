@@ -5,7 +5,7 @@ with open("README.md", "r") as fh:
 
 setuptools.setup(
     name="ColumnFile",
-    version="0.0.1",
+    version="0.0.4",
     author="Henri Lefebvre",
     author_email="henri.pasdecalais@yahoo.com",
     description="Simple library to manage local file storage within an application based on the concept of local partition and sort keys",
