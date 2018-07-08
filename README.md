@@ -6,6 +6,15 @@ This solution allows efficient CRUD operations by key. Details concerning the im
 
 ![How data is organized by column-file](src/structure.png)
 
+## Installation
+
+**With Pip :**
+``` pip3 install ColumnFile ```
+
+**Usage :**
+
+``` from ColumnFile import ColumnFile as db ```
+
 ## Documentation
 
 ### Create and open operations
