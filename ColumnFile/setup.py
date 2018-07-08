@@ -4,7 +4,7 @@ with open("README.md", "r") as fh:
     long_description = fh.read()
 
 setuptools.setup(
-    name="column-file",
+    name="ColumnFile",
     version="0.0.1",
     author="Henri Lefebvre",
     author_email="henri.pasdecalais@yahoo.com",

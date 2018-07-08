@@ -1,3 +1,6 @@
 test-db
 __pycache__
 article.md
+dist
+build
+ColumnFile.egg-info
