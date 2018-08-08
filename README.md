@@ -1,5 +1,10 @@
 # ColumnFile : column oriented file storage
 
+![version](https://img.shields.io/pypi/v/ColumnFile.svg)
+![maintained](https://img.shields.io/badge/Maintained_%3F-yes-green.svg)
+![license](https://img.shields.io/github/license/hlefebvr/column-file.svg)
+![issues](https://img.shields.io/github/issues/hlefebvr/column-file.svg)
+
 ColumnFile is a simple column oriented file storage solution for analyzing all kinds of data (csv, json, ...) using local files.
 
 This solution allows efficient CRUD operations by key. Details concerning the implementation are available here : [see implementation details](https://operations-research.blog/2018/07/08/building-a-local-column-oriented-database-in-python/). It produces a file organization allowing fast access to data as follow : 
@@ -79,5 +84,5 @@ print('Average = ', average)
 
 ## Example projects
 
-- [COMING] [Modeling railway networks with the time expanded model](http://operations-research.blog)
+- [Modeling railway networks with the time expanded model](https://operations-research.blog/2018/07/12/building-the-time-expanded-model-with-the-real-montreal-railway-network/)
 
