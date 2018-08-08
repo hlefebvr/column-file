@@ -1,6 +1,7 @@
 # ColumnFile : column oriented file storage
 
 ![version](https://img.shields.io/pypi/v/ColumnFile.svg)
+[![downloads](http://pepy.tech/badge/columnfile)](http://pepy.tech/project/columnfile)
 ![maintained](https://img.shields.io/badge/Maintained_%3F-yes-green.svg)
 ![license](https://img.shields.io/github/license/hlefebvr/column-file.svg)
 ![issues](https://img.shields.io/github/issues/hlefebvr/column-file.svg)
